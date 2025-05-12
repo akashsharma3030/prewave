@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15.3
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    expose:
+        - "6432"
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./src/main/resources/init_node_table.sql:/docker-entrypoint-initdb.d/init_node_table.sql
+    command: -p 6432
+  app:
+    build:
+      context: .
+      target: app
+    ports:
+      - "8085:8085"
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:6432/postgres
+      SPRING_DATASOURCE_USERNAME: testuser
+      SPRING_DATASOURCE_PASSWORD: testpass

@@ -1,0 +1,116 @@
+plugins {
+	id 'org.jetbrains.kotlin.jvm' version '1.9.25'
+	id 'org.jetbrains.kotlin.plugin.spring' version '1.9.25'
+	id 'org.springframework.boot' version '3.4.5'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'nu.studer.jooq' version '10.1'
+}
+
+group = 'prewave'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs = ['src/main/generated', 'src/main/kotlin']
+		}
+	}
+}
+
+kotlin {
+	jvmToolchain {
+		languageVersion.set(JavaLanguageVersion.of(21))
+	}
+	compilerOptions {
+		freeCompilerArgs.addAll '-Xjsr305=strict'
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	mavenLocal()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+	implementation 'org.jetbrains.kotlin:kotlin-reflect'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+	implementation 'org.jooq:jooq:3.20.3'
+	implementation 'org.jooq:jooq-meta:3.20.3'
+	implementation 'org.jooq:jooq-codegen:3.20.3'
+	runtimeOnly 'org.postgresql:postgresql:42.7.5'
+	implementation 'org.jooq:jooq-postgres-extensions:3.20.3'
+	jooqGenerator 'org.postgresql:postgresql:42.7.5'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+	implementation("org.springframework:spring-tx:6.2.6")
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.hibernate.validator:hibernate-validator:8.0.0.Final'
+	testImplementation 'org.testcontainers:postgresql:1.21.0'
+	testImplementation 'org.testcontainers:junit-jupiter:1.21.0'
+}
+
+configurations.all {
+	resolutionStrategy {
+		eachDependency { details ->
+			if (details.requested.group == "org.jooq") {
+				details.useVersion("3.20.3")
+			}
+
+		}
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+
+
+jooq {
+	version = "3.20.3"
+	edition = nu.studer.gradle.jooq.JooqEdition.OSS
+	configurations {
+		main {
+			generateSchemaSourceOnCompilation = true
+			generationTool {
+				logging = org.jooq.meta.jaxb.Logging.WARN
+				jdbc {
+					driver = 'org.postgresql.Driver'
+					url = 'jdbc:postgresql://localhost:5432/prewavetree'
+					user = 'postgres'
+					password = 'admin'
+				}
+				generator {
+					name = "org.jooq.codegen.KotlinGenerator"
+					database {
+						name = "org.jooq.meta.postgres.PostgresDatabase"
+						inputSchema = "public"
+						includes = ".*"
+					}
+					target {
+						packageName = "prewave.product.jooq"
+						directory = "src/main/generated"
+					}
+				}
+			}
+		}
+	}
+}
